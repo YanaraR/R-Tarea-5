@@ -1,0 +1,198 @@
+#pregunta 3 tarea 5
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+
+#3.a
+set.seed(1234)
+Rep = 10000
+betas = matrix(NA ,nrow = Rep, ncol = 8)
+
+b0 = 2
+b1 = 2.5
+b2 = 1
+
+N = c(50, 100, 500, 1000)
+
+for (j in 1:length(N)){
+  x1 = rnorm(N[j],20,1)
+  x2 = (0.8*x1) + rnorm(N[j],0,1)
+  for (i in 1:Rep) {
+    u = rnorm(N[j],0,1)
+    v = b2*x2 + u
+    Y_sesgado = b0 + b1*x1 + v
+    Y_insesgado = b0 + b1*x1 + b2*x2 + u
+    reg_sesgo = lm(Y_sesgado ~ x1)
+    betas[i,j] = reg_sesgo$coef[2]
+    reg_insesgado = lm(Y_insesgado ~ x1 + x2)
+    betas[i,j+4] = reg_insesgado$coef[2]
+  }
+}
+
+betas_normales = data.frame(betas)
+
+apply(betas_normales, 2, mean)
+apply(betas_normales, 2, var)
+
+#3.b
+#betas sesgados
+graph1_n50_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,1],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,1]), sd=sd(betas_normales[,1])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_sesgo
+
+graph2_n100_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,2],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,2]), sd=sd(betas_normales[,2])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_sesgo
+
+graph3_n500_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,3],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,3]), sd=sd(betas_normales[,3])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_sesgo
+
+graph4_n1000_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,4],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,4]), sd=sd(betas_normales[,4])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+REG1000s
+
+#betas insesgados
+graph1_n50_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,5],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,5]), sd=sd(betas_normales[,5])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_insesgado
+
+graph2_n100_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,6],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,6]), sd=sd(betas_normales[,6])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_insesgado
+
+graph3_n500_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,7],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,7]), sd=sd(betas_normales[,7])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_insesgado
+
+graph4_n1000_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,8],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,8]), sd=sd(betas_normales[,8])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_insesgado
+
+#3.c
+set.seed(1234)
+Rep = 10000
+betas = matrix(NA ,nrow = Rep, ncol = 8)
+
+b0 = 2
+b1 = 2.5
+b2 = 1
+
+N = c(50, 100, 500, 1000)
+
+for (j in 1:length(N)){
+  x1 = rnorm(N[j],20,1)
+  x2 = runif(N[j],0,1)
+  for (i in 1:Rep) {
+    u = rnorm(N[j],0,1)
+    v = b2*x2 + u
+    Y_sesgado = b0 + b1*x1 + v
+    Y_insesgado = b0 + b1*x1 + b2*x2 + u
+    reg_sesgado = lm(Y_sesgado ~ x1)
+    betas[i,j] = reg_sesgado$coef[2]
+    reg_insesgado = lm(Y_insesgado ~ x1 + x2)
+    betas[i,j+4] = reg_insesgado$coef[2]
+  }
+}
+
+betas_unif = data.frame(betas)
+
+apply(betas_unif, 2, mean)
+apply(betas_unif, 2, var)
+
+#betas insesgados para distintos tamaños muestrales
+graph1_n50_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,1],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,1]), sd=sd(betas_unif[,1])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_sesgo_unif
+
+graph2_n100_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,2],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,2]), sd=sd(betas_unif[,2])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_sesgo_unif
+
+graph3_n500_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,3],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,3]), sd=sd(betas_unif[,3])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_sesgo_unif
+
+graph4_n1000_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,4],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,4]), sd=sd(betas_unif[,4])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_sesgo_unif
+
+graph1_n50_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,5],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,5]), sd=sd(betas_unif[,5])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_insesgado
+
+graph2_n100_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,6],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,6]), sd=sd(betas_unif[,6])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_insesgado
+
+graph3_n500_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,7],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,7]), sd=sd(betas_unif[,7])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_insesgado
+
+graph4_n1000_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,8],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,8]), sd=sd(betas_unif[,8])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_insesgado
