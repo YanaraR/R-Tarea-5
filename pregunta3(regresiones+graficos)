@@ -34,6 +34,12 @@ betas_normales = data.frame(betas)
 apply(betas_normales, 2, mean)
 apply(betas_normales, 2, var)
 
+#Como podemos ver, existe sesgo en la regresion aproximadamente de un 0.5 de diferencia 
+#con el verdadero beta poblacional. A su vez, este sesgo no desaparece cuando aumenta el 
+#tamaño de la muestra, sino que es persistente a esta variable. Esto lo podemos ver 
+#en la siguiente pregunta de como el sesgo se mantiene casi constante en los mismos valores
+#a pesar del aumento en la muestra 
+
 #3.b
 #betas sesgados
 graph1_n50_sesgo = ggplot(betas_normales) + 
@@ -196,3 +202,12 @@ graph4_n1000_insesgado = ggplot(betas_unif) +
   ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
   theme_economist_white()
 graph4_n1000_insesgado
+
+
+#Ante un cambio en la distribucion en x_2 podemos ver un cambio en el beta muestral
+#ya que presenta valores que son similares a los poblacionales, por lo que podemos 
+#decir que el sesgo es minimo con respecto al caso anterior. Esto cambia los resultados 
+#con respecto a las preguntas a) y b) respectivamente, ya que los graficos entre los 
+#resultados muestrales y la poblacion son similares y los valores de la regresion
+#muestral son similares a los valores poblacionales, no como en la pregunta a) 
+#donde existia una diferencia considerable entre los betas estimados 
