@@ -1,0 +1,357 @@
+---
+title: "Tarea 5-R-UDP"
+author: "Flores - Rivera - Saavedra"
+date: "7/12/2018"
+output: html_document
+---
+#1. Descargue el precio de las acciones de Microsoft (“MSFT”) y Apple (“AAPL”) desde Enero del 2000 hasta Agosto del 2018 con periodicidad mensual.
+
+```{r}
+install.packages("tidyquant")
+install.packages("pacman")
+if(!require("pacman")) 
+  library("pacman")
+p_load("tidyverse","tidyquant","ggthemes")
+library(ggplot2)
+library(ggthemes)
+
+#Datos Microsoft
+microsoft_precio <- tq_get("MSFT",
+                       get = "stock.prices",
+                       from = "1999-11-01",
+                       to = "2018-09-05",
+                       periodicity = "monthly")
+
+microsoft_quantmod <- getSymbols("MSFT",
+                             src = "yahoo",
+                             from = "1999-11-01",
+                             to = "2018-09-05",
+                             periodicity = "monthly")
+
+microsoft_quantmod <- as.data.frame(MSFT) %>%
+  as.tibble() %>%
+  mutate(date = index(MSFT)) %>%
+  rename("open" = "MSFT.Open", "high" = "MSFT.High",
+         "low" = "MSFT.Low" , "close"= "MSFT.Close",
+         "volume" = "MSFT.Volume", "adjusted" = "MSFT.Adjusted")
+n <- length(microsoft_precio$adjusted)
+
+#Datos Apple 
+apple_precio <- tq_get("AAPL",
+                           get = "stock.prices",
+                           from = "1999-11-01",
+                           to = "2018-09-05",
+                           periodicity = "monthly")
+
+apple_quantmod <- getSymbols("AAPL",
+                                 src = "yahoo",
+                                 from = "1999-11-01",
+                                 to = "2018-09-05",
+                                 periodicity = "monthly")
+
+apple_quantmod <- as.data.frame(AAPL) %>%
+  as.tibble() %>%
+  mutate(date = index(AAPL)) %>%
+  rename("open" = "AAPL.Open", "high" = "AAPL.High",
+         "low" = "AAPL.Low" , "close"= "AAPL.Close",
+         "volume" = "AAPL.Volume", "adjusted" = "AAPL.Adjusted")
+a <- length(apple_precio$adjusted)
+```
+
+
+#2. Utilizando los datos de 2.1, construya una función que permita:
+##a. Calcular los retornos.
+##b. Graficar los retornos y retornos acumulados
+##c. Testear normalidad usando jarque-Bera (JB)
+```{r}
+
+#retornos Microsoft 
+for(i in 1:n){
+  microsoft_precio[i+1,8] = log(microsoft_precio[i+1,7]/microsoft_precio[i,7])
+  if(i <= 2){microsoft_precio[i+1,9] = microsoft_precio[i+1,8] + microsoft_precio[i,8]}
+  else{microsoft_precio[i+1,9] = microsoft_precio[i,9] + microsoft_precio[i+1,8]}
+}
+
+microsoft_precio = microsoft_precio %>% rename(retornos = "adjusted.1")
+microsoft_precio = microsoft_precio %>% rename(retornos_acum = "adjusted.1.1")
+retornosMSFT <- microsoft_precio[3:226,]
+r <- length(retornosMSFT$retornos)
+sum(retornosMSFT$retornos)
+
+retornosMSFT %>% ggplot()+
+  geom_line(aes(x=date, y=retornos), linetype = "solid", color = "black", size=0.5) +
+  xlab("Fecha retornos (mensual)") + ylab("retorno accion") +
+  theme_economist_white()
+
+retornosMSFT %>% ggplot()+
+  geom_line(aes(x=date, y=retornos_acum), linetype = "solid", color = "red", size=0.5) +
+  xlab("Fecha retornos (mensual)") + ylab("retorno accion") +
+  theme_economist_white()
+
+#retornos Apple 
+for(i in 1:a){
+  apple_precio[i+1,8] = log(apple_precio[i+1,7]/apple_precio[i,7])
+  if(i <= 2){apple_precio[i+1,9] = apple_precio[i+1,8] + apple_precio[i,8]}
+  else{apple_precio[i+1,9] = apple_precio[i,9] + apple_precio[i+1,8]}
+}
+
+apple_precio = apple_precio %>% rename(retornos = "adjusted.1")
+apple_precio = apple_precio %>% rename(retornos_acum = "adjusted.1.1")
+retornosAAPL <- apple_precio[3:226,]
+p <- length(retornosAAPL$retornos)
+sum(retornosAAPL$retornos)
+
+retornosAAPL %>% ggplot()+
+  geom_line(aes(x=date, y=retornos), linetype = "solid", color = "pink", size=0.5) +
+  xlab("Fecha retornos (mensual)") + ylab("retorno accion") +
+  theme_economist_white()
+ 
+retornosAAPL %>% ggplot()+
+  geom_line(aes(x=date, y=retornos_acum), linetype = "solid", color = "blue", size=0.5) +
+  xlab("Fecha retornos (mensual)") + ylab("retorno accion") +
+  theme_economist_white()
+
+#normalidad Microsoft
+m1 <- sum(retornosMSFT$retornos)/r #media aritmetica
+m2 <- sum((retornosMSFT$retornos - m1)^2) #usado en ambos denominadores 
+m3 <- sum((retornosMSFT$retornos - m1)^3) #numerador del coeficiente de asimetria 
+m4 <- sum((retornosMSFT$retornos - m1)^4) #numerador de kurtosis 
+sm1 <- (m3/m2^(3/2))^2 #calculo coeficiente de asimetria 
+sm2 <- (m4/m2^2) #calculo kurtosis 
+JB <- r*sm1/6+(sm2-3)^2/24
+test_chi <- 1 - pchisq(JB, df = 2)
+#H_0: los retornos son normales 
+#H_1: los retornos no son normales 
+test_hipotesis_m = if(JB > test_chi){"Se rechaza la hipotesis nula"}else{"No se rechaza la hipotesis nula"}
+test_hipotesis_m
+
+#normalidad Apple
+a1 <- sum(retornosAAPL$retornos)/p #media aritmetica
+a2 <- sum((retornosAAPL$retornos - a1)^2) #usado en ambos denominadores 
+a3 <- sum((retornosAAPL$retornos - a1)^3) #numerador del coeficiente de asimetria 
+a4 <- sum((retornosAAPL$retornos - a1)^4) #numerador de kurtosis 
+sa1 <- (a3/a2^(3/2))^2 #calculo coeficiente de asimetria 
+sa2 <- (a4/a2^2) #calculo kurtosis 
+JB_a <- p*sa1/6+(sa2-3)^2/24
+test_chi_apple <- 1 - pchisq(JB_a, df = 2)
+#H_0: los retornos son normales 
+#H_1: los retornos no son normales 
+test_hipotesis_a = if(JB_a > test_chi_apple){"Se rechaza la hipotesis nula"}else{"No se rechaza la hipotesis nula"}
+test_hipotesis_a
+```
+
+#Suponga que el modelo poblacional es el siguiente: y = 0 + 1x1 + 2x2 + u. Sin embargo, por ignorancia o falta de datos, se estima el modelo excluyendo x2, realizándose la siguiente regresión simple de y sólo sobre x1: y = 0 + 1x1 + v, donde v = 2x2 + u
+##a. Calcule E( ˆ 1) y var( ˆ 1) para muestras de tamaños 50, 100, 500, 1000. ¿Existe sesgo?, ¿Desaparece el sesgo a medida que el tamaño de la muestra aumenta?
+
+```{r}
+install.packages("ggplot2")
+install.packages("ggthemes")
+install.packages("dplyr")
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+
+#3.a
+set.seed(1234)
+Rep = 10000
+betas = matrix(NA ,nrow = Rep, ncol = 8)
+
+b0 = 2
+b1 = 2.5
+b2 = 1
+
+N = c(50, 100, 500, 1000)
+
+for (j in 1:length(N)){
+  x1 = rnorm(N[j],20,1)
+  x2 = (0.8*x1) + rnorm(N[j],0,1)
+  for (i in 1:Rep) {
+    u = rnorm(N[j],0,1)
+    v = b2*x2 + u
+    Y_sesgado = b0 + b1*x1 + v
+    Y_insesgado = b0 + b1*x1 + b2*x2 + u
+    reg_sesgo = lm(Y_sesgado ~ x1)
+    betas[i,j] = reg_sesgo$coef[2]
+    reg_insesgado = lm(Y_insesgado ~ x1 + x2)
+    betas[i,j+4] = reg_insesgado$coef[2]
+  }
+}
+
+betas_normales = data.frame(betas)
+
+apply(betas_normales, 2, mean)
+apply(betas_normales, 2, var)
+```
+
+### Como podemos ver, existe sesgo en la regresion aproximadamente de un 0.5 de diferencia con el verdadero beta poblacional. A su vez, este sesgo no desaparece cuando aumenta el  tamaño de la muestra,sino que es persistente a esta variable. Esto lo podemos ver  en la siguiente pregunta de como el sesgo se mantiene casi constante en los mismos valores a pesar del aumento en la muestra 
+
+##b. Grafique la distribución de ˆ 1 para tamaños de muestra n = 50, 100, 500, 1000
+
+```{r}
+#betas sesgados
+graph1_n50_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,1],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,1]), sd=sd(betas_normales[,1])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_sesgo
+
+graph2_n100_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,2],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,2]), sd=sd(betas_normales[,2])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_sesgo
+
+graph3_n500_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,3],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,3]), sd=sd(betas_normales[,3])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_sesgo
+
+graph4_n1000_sesgo = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,4],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,4]), sd=sd(betas_normales[,4])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_sesgo
+
+#betas insesgados
+graph1_n50_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,5],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,5]), sd=sd(betas_normales[,5])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_insesgado
+
+graph2_n100_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,6],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,6]), sd=sd(betas_normales[,6])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_insesgado
+
+graph3_n500_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,7],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,7]), sd=sd(betas_normales[,7])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_insesgado
+
+graph4_n1000_insesgado = ggplot(betas_normales) + 
+  geom_histogram(aes(betas_normales[,8],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_normales[,8]), sd=sd(betas_normales[,8])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_insesgado
+```
+
+
+##c. Si x2  U[0, 1], ¿Cómo cambian los resultados que obtuviste en (a) y (b)?
+
+```{r}
+set.seed(1234)
+Rep = 10000
+betas = matrix(NA ,nrow = Rep, ncol = 8)
+
+b0 = 2
+b1 = 2.5
+b2 = 1
+
+N = c(50, 100, 500, 1000)
+
+for (j in 1:length(N)){
+  x1 = rnorm(N[j],20,1)
+  x2 = runif(N[j],0,1)
+  for (i in 1:Rep) {
+    u = rnorm(N[j],0,1)
+    v = b2*x2 + u
+    Y_sesgado = b0 + b1*x1 + v
+    Y_insesgado = b0 + b1*x1 + b2*x2 + u
+    reg_sesgado = lm(Y_sesgado ~ x1)
+    betas[i,j] = reg_sesgado$coef[2]
+    reg_insesgado = lm(Y_insesgado ~ x1 + x2)
+    betas[i,j+4] = reg_insesgado$coef[2]
+  }
+}
+
+betas_unif = data.frame(betas)
+
+apply(betas_unif, 2, mean)
+apply(betas_unif, 2, var)
+
+#betas insesgados para distintos tamaños muestrales
+graph1_n50_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,1],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,1]), sd=sd(betas_unif[,1])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_sesgo_unif
+
+graph2_n100_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,2],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,2]), sd=sd(betas_unif[,2])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_sesgo_unif
+
+graph3_n500_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,3],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,3]), sd=sd(betas_unif[,3])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_sesgo_unif
+
+graph4_n1000_sesgo_unif = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,4],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,4]), sd=sd(betas_unif[,4])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_sesgo_unif
+
+graph1_n50_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,5],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,5]), sd=sd(betas_unif[,5])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=50") +xlab("Estimador b1") +
+  theme_economist_white()
+graph1_n50_insesgado
+
+graph2_n100_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,6],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,6]), sd=sd(betas_unif[,6])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph2_n100_insesgado
+
+graph3_n500_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,7],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,7]), sd=sd(betas_unif[,7])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph3_n500_insesgado
+
+graph4_n1000_insesgado = ggplot(betas_unif) + 
+  geom_histogram(aes(betas_unif[,8],y=..density..), col="black", bins = 25) +
+  stat_function(fun = dnorm, args = list(mean=mean(betas_unif[,8]), sd=sd(betas_unif[,8])),
+                geom = "line", color="red", size=1) +
+  ylab("Densidad") + ggtitle("Distribucion del estimador b1 con N=100") +xlab("Estimador b1") +
+  theme_economist_white()
+graph4_n1000_insesgado
+```
+###Ante un cambio en la distribucion en x_2 podemos ver un cambio en el beta muestral ya que presenta valores que son similares a los poblacionales, por lo que podemos decir que el sesgo es minimo con respecto al caso anterior. Esto cambia los resultados  con respecto a las preguntas a) y b) respectivamente, ya que los graficos entre los resultados muestrales y la poblacion son similares y los valores de la regresion muestral son similares a los valores poblacionales, no como en la pregunta a) donde existia una diferencia considerable entre los betas estimados 
