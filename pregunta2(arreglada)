@@ -1,3 +1,4 @@
+```{r}
 #Retornos Microsoft (MSFT)
 microsoft_precio <- tq_get("MSFT",
                        get = "stock.prices",
@@ -110,3 +111,4 @@ test_chi_apple <- 1 - pchisq(JB_a, df = 2)
 #H_1: los retornos no son normales 
 test_hipotesis_a = if(JB_a > test_chi_apple){"Se rechaza la hipotesis nula"}else{"No se rechaza la hipotesis nula"}
 test_hipotesis_a
+```
