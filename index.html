@@ -1,4 +1,16 @@
-<h1>Tarea5</h1>
+##Tarea5
+---
+title: "Tarea 5 - R"
+author: "Flores L., Rivera Y., Saavedra J."
+date: "07 de diciembre de 2018"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r}
 install.packages("dplyr")
 install.packages("ggplot2")
 install.packages("ggthemes")
@@ -85,4 +97,5 @@ test_chi_apple <- 1 - pchisq(JB_a, df = 2)
 #H_0: los retornos son normales 
 #H_1: los retornos no son normales 
 if(JB_a > test_chi_apple){"Se rechaza la hipotesis nula"}else{"No se rechaza la hipotesis nula"}
+```
 
